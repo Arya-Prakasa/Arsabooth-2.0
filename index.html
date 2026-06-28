@@ -522,7 +522,7 @@ async function grabFrame() {
   const cx=c.getContext('2d');
   cx.translate(W,0); cx.scale(-1,1);
   cx.filter=FILTER_MAP[currentFilter]||'none';
-  drawImageCover(ctx, video, 0, 0, W, H);
+  cx.drawImage(video,0,0,W,H);
   cx.filter='none'; cx.setTransform(1,0,0,1,0,0);
   if(hdEnhance){ const e=await enhanceHD(c); return e.toDataURL('image/png',.97); }
   return c.toDataURL('image/png',.92);
@@ -573,12 +573,9 @@ async function downloadStrip() {
 
   /* Canvas geometry */
   const SW   = 1200;                    // single strip width
-  const DIV = 2;
-  const PW = Math.floor((SW - DIV) / 2);
-  const PH = Math.floor(PW * 1.25);
-  const px = ox + c * (PW + DIV);
-  const py = PAD + HH + r * (PH + DIV);
-                            // cross-divider thickness
+  const PW   = SW / 2;                 // each photo width  (2 cols)
+  const PH   = Math.round(PW * 3/4);  // each photo height (4:3)
+  const DIV  = 2;                      // cross-divider thickness
   const GRIDH= PH*2 + DIV;            // grid total height
   const HH   = 56;                     // header height
   const FH   = 28;                     // footer height
@@ -646,26 +643,8 @@ async function downloadStrip() {
 }
 
 
-function loadImg(ctx, src, x, y, w, h){
-
-    return new Promise(resolve=>{
-
-        const img = new Image();
-
-        img.onload = ()=>{
-
-            drawImageCover(ctx, img, x, y, w, h);
-
-            resolve();
-
-        };
-
-        img.onerror = resolve;
-
-        img.src = src;
-
-    });
-
+function loadImg(ctx,src,x,y,w,h){
+  return new Promise(res=>{const img=new Image();img.onload=()=>{ctx.drawImage(img,x,y,w,h);res();};img.onerror=res;img.src=src;});
 }
 /* ── RESET ── */
 function resetSession() {
@@ -678,34 +657,21 @@ function resetSession() {
   downloadBtn.disabled=true;
   if(stream) setStatus('Kamera siap — pilih varian & filter, lalu foto!','active');
 }
-function drawImageCover(ctx, source, x, y, w, h) {
+function drawCover(ctx, img, x, y, w, h){
 
-    const sw = source.videoWidth || source.width;
-    const sh = source.videoHeight || source.height;
-
-    const zoom = 1.15;
-
-const scale = Math.max(
-    w / sw,
-    h / sh
-) * zoom;
-
-    const nw = sw * scale;
-    const nh = sh * scale;
-
-    const dx = x + (w - nw) / 2;
-    const dy = y + (h - nh) / 2;
-
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-
-    ctx.drawImage(
-        source,
-        dx,
-        dy,
-        nw,
-        nh
+    const scale = Math.max(
+        w / img.width,
+        h / img.height
     );
+
+    const nw = img.width * scale;
+    const nh = img.height * scale;
+
+    const nx = x + (w - nw)/2;
+    const ny = y + (h - nh)/2;
+
+    ctx.drawImage(img, nx, ny, nw, nh);
+
 }
 /* ── BOOT ── */
 video.style.display='none';
