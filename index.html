@@ -670,7 +670,7 @@ function drawCover(ctx, img, x, y, w, h){
     const nx = x + (w - nw)/2;
     const ny = y + (h - nh)/2;
 
-    ctx.drawImage(img, nx, ny, nw, nh);
+    drawCover(ctx,img,x,y,w,h);
 
 }
 /* ── BOOT ── */
